@@ -144,7 +144,6 @@
     </div>
 
     <script>
-        // بيانات الفرق
         let teams = [
             { id: 0, name: "", score: 0 },
             { id: 1, name: "", score: 0 },
@@ -153,7 +152,6 @@
         ];
         let currentActingTeam = null;
 
-        // الأسئلة الـ 34 كاملة
         const questions = [
             { q: "أي الكلمات الآتية لا تصف النبات في الصورة أعلاه؟", image: "img_ch5_q2.jpg", options: {a: "متعدد الخلايا.", b: "لاوعائي.", c: "لابذري.", d: "ثالوس."}, correct: "d" },
             { q: "أي من الآتي يُعدّ من خصائص الحزازيات؟", image: "", options: {a: "الأنسجة الوعائية.", b: "الأزهار.", c: "البذور.", d: "أشباه الجذور."}, correct: "d" },
@@ -252,7 +250,6 @@
             
             if (selectedKey === questions[currentIndex].correct) {
                 selectedBtn.classList.add('correct');
-                // إذا إجابة صحيحة، افتح نافذة النقاط بعد نصف ثانية
                 setTimeout(openScoringModal, 500);
             } else {
                 selectedBtn.classList.add('wrong');
@@ -283,9 +280,10 @@
             } else {
                 alert("انتهت المسابقة! راجع لوحة النقاط لمعرفة الفريق الفائز. أحسنتم يا شباب!");
                 currentIndex = 0;
-                // يمكن إعادة تحميل الصفحة هنا أو تركها للنتيجة
             }
         }
 
-        /* --- نظام النافذة المنبثقة للمسابقة --- */
-        funct
+        function openScoringModal() {
+            document.getElementById('scoringModal').style.display = 'flex';
+            document.getElementById('modal-step-1').style.display = 'block';
+            document.getElementById('modal-step-2').style.displ
