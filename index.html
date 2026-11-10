@@ -286,4 +286,59 @@
         function openScoringModal() {
             document.getElementById('scoringModal').style.display = 'flex';
             document.getElementById('modal-step-1').style.display = 'block';
-            document.getElementById('modal-step-2').style.displ
+                        document.getElementById('modal-step-2').style.display = 'none';
+            document.getElementById('modal-step-3').style.display = 'none';
+
+            const container = document.getElementById('answering-teams-btns');
+            container.innerHTML = '';
+            teams.forEach(team => {
+                const btn = document.createElement('button');
+                btn.className = 'modal-btn btn-team';
+                btn.innerText = team.name;
+                btn.onclick = () => selectAnsweringTeam(team.id);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectAnsweringTeam(teamId) {
+            currentActingTeam = teamId;
+            document.getElementById('acting-team-name').innerText = teams[teamId].name;
+            document.getElementById('modal-step-1').style.display = 'none';
+            document.getElementById('modal-step-2').style.display = 'block';
+        }
+
+        function processAction(action) {
+            if (action === 'add') {
+                teams[currentActingTeam].score++;
+                closeModal();
+            } else if (action === 'deduct') {
+                document.getElementById('modal-step-2').style.display = 'none';
+                document.getElementById('modal-step-3').style.display = 'block';
+                
+                const container = document.getElementById('victim-teams-btns');
+                container.innerHTML = '';
+                teams.forEach(team => {
+                    if (team.id !== currentActingTeam) {
+                        const btn = document.createElement('button');
+                        btn.className = 'modal-btn btn-team';
+                        btn.innerText = team.name;
+                        btn.onclick = () => {
+                            teams[team.id].score--; 
+                            closeModal();
+                        };
+                        container.appendChild(btn);
+                    }
+                });
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('scoringModal').style.display = 'none';
+            updateScoreboardUI();
+            document.getElementById('btnNext').style.display = 'block';
+        }
+
+    </script>
+</body>
+</html>
+
