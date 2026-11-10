@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مسابقة الأحياء التفاعلية - الفصول 5 و 6</title>
+    <style>
+        body { font-family: Arial, Tahoma, sans-serif; background-color: #f4f9f5; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: #2c3e50; }
+        
+        /* الحاويات الرئيسية */
+        .container { background: #ffffff; width: 95%; max-width: 1000px; border-radius: 20px; box-shadow: 0 10px 30px rgba(46, 125, 50, 0.15); padding: 40px; border-top: 8px solid #2e7d32; text-align: center; overflow-y: auto; max-height: 95vh; }
+        
+        /* شاشة البداية (إعداد الفرق) */
+        #setup-screen { display: block; }
+        .setup-title { font-size: 32px; color: #1b5e20; margin-bottom: 30px; font-weight: bold; }
+        .team-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .team-input-group { display: flex; flex-direction: column; text-align: right; }
+        .team-input-group label { font-size: 18px; color: #2e7d32; margin-bottom: 8px; font-weight: bold; }
+        .team-input-group input { padding: 12px; font-size: 18px; border: 2px solid #ccc; border-radius: 8px; font-family: inherit; }
+        .team-input-group input:focus { border-color: #2e7d32; outline: none; }
+        .btn-start { background-color: #2e7d32; color: white; padding: 15px 40px; font-size: 24px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; }
+        .btn-start:hover { background-color: #1b5e20; }
+
+        /* شاشة المسابقة */
+        #quiz-screen { display: none; }
+        
+        /* لوحة النقاط */
+        .scoreboard { display: flex; justify-content: space-between; background: #e8f5e9; padding: 15px; border-radius: 12px; margin-bottom: 25px; border: 2px solid #c8e6c9; }
+        .team-score { flex: 1; text-align: center; border-left: 2px solid #c8e6c9; padding: 0 10px; }
+        .team-score:last-child { border-left: none; }
+        .team-name-display { font-size: 18px; font-weight: bold; color: #388e3c; margin-bottom: 5px; }
+        .team-points { font-size: 28px; font-weight: bold; color: #1b5e20; }
+
+        /* عناصر السؤال */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 18px; color: #666; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .question-text { font-size: 30px; font-weight: bold; color: #1b5e20; margin-bottom: 25px; line-height: 1.5; }
+        .question-image { max-width: 100%; height: auto; max-height: 300px; border-radius: 10px; margin-bottom: 25px; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+        .option-btn { background-color: #f8f9fa; border: 2px solid #e0e0e0; border-radius: 12px; padding: 15px; font-size: 20px; font-family: inherit; cursor: pointer; transition: all 0.3s ease; text-align: right; }
+        .option-btn.correct { background-color: #c8e6c9; border-color: #2e7d32; color: #1b5e20; font-weight: bold; }
+        .option-btn.wrong { background-color: #ffcdd2; border-color: #c62828; color: #b71c1c; }
+        
+        /* أزرار التحكم */
+        .controls { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
+        .btn { padding: 15px 35px; font-size: 20px; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; color: white; }
+        .btn-show { background-color: #f57c00; }
+        .btn-next { background-color: #1976d2; display: none; }
+
+        /* النافذة المنبثقة لنظام النقاط (Modal) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; width: 90%; max-width: 600px; padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 5px 30px rgba(0,0,0,0.3); }
+        .modal-title { font-size: 28px; color: #2e7d32; margin-bottom: 20px; font-weight: bold; }
+        .modal-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .modal-btn { padding: 15px; font-size: 20px; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; transition: 0.2s; font-family: inherit; }
+        .btn-team { background-color: #e3f2fd; color: #1565c0; border: 2px solid #90caf9; }
+        .btn-team:hover { background-color: #bbdefb; }
+        .btn-add { background-color: #4caf50; color: white; }
+        .btn-deduct { background-color: #f44336; color: white; }
+        
+        #modal-step-2, #modal-step-3 { display: none; }
+
+    </style>
+</head>
+<body>
+
+    <!-- شاشة إعداد الفرق -->
+    <div id="setup-screen" class="container">
+        <div class="setup-title">🏆 إعداد مسابقة الأحياء التفاعلية 🏆</div>
+        <div class="team-inputs">
+            <div class="team-input-group">
+                <label>اسم المجموعة 1:</label>
+                <input type="text" id="t1-name" placeholder="مثال: العباقرة" value="المجموعة 1">
+            </div>
+            <div class="team-input-group">
+                <label>اسم المجموعة 2:</label>
+                <input type="text" id="t2-name" placeholder="مثال: المبدعون" value="المجموعة 2">
+            </div>
+            <div class="team-input-group">
+                <label>اسم المجموعة 3:</label>
+                <input type="text" id="t3-name" placeholder="مثال: الصقور" value="المجموعة 3">
+            </div>
+            <div class="team-input-group">
+                <label>اسم المجموعة 4:</label>
+                <input type="text" id="t4-name" placeholder="مثال: الرواد" value="المجموعة 4">
+            </div>
+        </div>
+        <button class="btn-start" onclick="startCompetition()">بدء المسابقة 🚀</button>
+    </div>
+
+    <!-- شاشة المسابقة -->
+    <div id="quiz-screen" class="container">
+        <!-- لوحة النقاط -->
+        <div class="scoreboard">
+            <div class="team-score"><div class="team-name-display" id="disp-t1">فريق 1</div><div class="team-points" id="score-t1">0</div></div>
+            <div class="team-score"><div class="team-name-display" id="disp-t2">فريق 2</div><div class="team-points" id="score-t2">0</div></div>
+            <div class="team-score"><div class="team-name-display" id="disp-t3">فريق 3</div><div class="team-points" id="score-t3">0</div></div>
+            <div class="team-score"><div class="team-name-display" id="disp-t4">فريق 4</div><div class="team-points" id="score-t4">0</div></div>
+        </div>
+
+        <div class="header">
+            <span id="progressText"></span>
+            <span>مراجعة الأحياء - الفصول 5 و 6</span>
+        </div>
+
+        <img id="questionImage" class="question-image" src="" alt="صورة السؤال">
+        <div id="questionText" class="question-text">جاري التحميل...</div>
+
+        <div id="optionsContainer" class="options-grid"></div>
+
+        <div class="controls">
+            <button id="btnShow" class="btn btn-show" onclick="showCorrectAnswer()">إظهار الإجابة</button>
+            <button id="btnNext" class="btn btn-next" onclick="nextQuestion()">السؤال التالي ❯</button>
+        </div>
+    </div>
+
+    <!-- النافذة المنبثقة للتحكم بالنقاط -->
+    <div id="scoringModal" class="modal-overlay">
+        <div class="modal-content">
+            <!-- الخطوة 1: اختيار الفريق المجيب -->
+            <div id="modal-step-1">
+                <div class="modal-title">إجابة صحيحة! 👏<br><span style="font-size: 20px; color:#666;">من هو الفريق الذي أجاب؟</span></div>
+                <div class="modal-buttons" id="answering-teams-btns">
+                    <!-- تُضاف الأزرار برمجياً -->
+                </div>
+            </div>
+
+            <!-- الخطوة 2: اختيار المكافأة -->
+            <div id="modal-step-2">
+                <div class="modal-title">ماذا يختار <span id="acting-team-name" style="color:#f57c00;"></span>؟</div>
+                <div class="modal-buttons" style="grid-template-columns: 1fr;">
+                    <button class="modal-btn btn-add" onclick="processAction('add')">➕ إضافة نقطة لرصيدهم</button>
+                    <button class="modal-btn btn-deduct" onclick="processAction('deduct')">⚔️ خصم نقطة من فريق منافس</button>
+                </div>
+            </div>
+
+            <!-- الخطوة 3: اختيار الضحية (الخصم) -->
+            <div id="modal-step-3">
+                <div class="modal-title">⚔️ خصم نقطة من أي فريق؟</div>
+                <div class="modal-buttons" id="victim-teams-btns">
+                    <!-- تُضاف الأزرار برمجياً -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // بيانات الفرق
+        let teams = [
+            { id: 0, name: "", score: 0 },
+            { id: 1, name: "", score: 0 },
+            { id: 2, name: "", score: 0 },
+            { id: 3, name: "", score: 0 }
+        ];
+        let currentActingTeam = null;
+
+        // الأسئلة الـ 34 كاملة
+        const questions = [
+            { q: "أي الكلمات الآتية لا تصف النبات في الصورة أعلاه؟", image: "img_ch5_q2.jpg", options: {a: "متعدد الخلايا.", b: "لاوعائي.", c: "لابذري.", d: "ثالوس."}, correct: "d" },
+            { q: "أي من الآتي يُعدّ من خصائص الحزازيات؟", image: "", options: {a: "الأنسجة الوعائية.", b: "الأزهار.", c: "البذور.", d: "أشباه الجذور."}, correct: "d" },
+            { q: "أي المصطلحات الآتية تناسب ملء الفراغ في الشكل أعلاه؟", image: "img_ch5_q10.jpg", options: {a: "لاوعائية.", b: "زهرية.", c: "وعائية.", d: "منتجة للبذور."}, correct: "a" },
+            { q: "أي التراكيب الآتية يحوي تجمعًا من محافظ الأبواغ؟", image: "", options: {a: "الكيس البوغي.", b: "السعفة.", c: "الساق.", d: "النصل."}, correct: "a" },
+            { q: "أي الآتي لا يشكل جزءًا من الخنشار؟", image: "", options: {a: "الرايزوم.", b: "البثرة.", c: "ورقة الخنشار أو السعفة.", d: "شبه الجذر."}, correct: "d" },
+            { q: "أي الصور الآتية تظهر البثرة (الأكياس البوغية)؟", image: "img_ch5_q13.jpg", options: {a: "الصورة A", b: "الصورة B", c: "الصورة C", d: "الصورة D"}, correct: "b" },
+            { q: "أي الآتي يضم النباتات التي لها أوراق إبرية أو حرشفية؟", image: "", options: {a: "نباتات النيتوفايت.", b: "النباتات الزهرية.", c: "النباتات المخروطية.", d: "النباتات السيكادية."}, correct: "c" },
+            { q: "أي النباتات الآتية تنتج تراكيب تكاثر أنثوية كما في الصورة؟", image: "img_ch5_q21.jpg", options: {a: "المخروطيات.", b: "النباتات الزهرية.", c: "النيتوفايت.", d: "النباتات الجنكية."}, correct: "d" },
+            { q: "ما الذي يصف أهمية انتشار البذور؟", image: "", options: {a: "تنتج جميع أنواع النباتات.", b: "تنشرها في الهواء فقط.", c: "يحد من التنافس فيما بين الآباء والأبناء.", d: "تنتشر في الصحراء فقط."}, correct: "c" },
+            { q: "في أي أقسام النباتات البذرية تتوقع وجود التركيب الموضح أعلاه؟", image: "img_ch5test_q1.jpg", options: {a: "النباتات الزهرية.", b: "النباتات المخروطية.", c: "النباتات السيكادية.", d: "النباتات الجنكية."}, correct: "b" },
+            { q: "افترض أن خلية من ورقة خنشار تحوي 24 كروموسومًا. فكم تتوقع أن يكون عدد الكروموسومات في الأبواغ؟", image: "", options: {a: "6", b: "12", c: "24", d: "48"}, correct: "b" },
+            { q: "أي تركيب في النباتات اللاوعائية تساعد على امتصاص المواد المغذية من التربة؟", image: "", options: {a: "البلاستيدات الخضراء.", b: "الصمغ النباتي.", c: "أشباه الجذور.", d: "الطور البوغي."}, correct: "c" },
+            { q: "في أثناء الطقس الجاف تتطاير قطع من الحزاز الحقيقي... ما العملية التي تمثل هذه الظاهرة؟", image: "", options: {a: "تعاقب الأجيال.", b: "تكاثر الطور المشيجي.", c: "الطور البوغي.", d: "التكاثر الخضري."}, correct: "d" },
+            { q: "كيف تختلف الحشائش الكبدية عن النباتات اللاوعائية الأخرى؟", image: "", options: {a: "ينتقل الماء بالانتشار والأسموزية.", b: "تحوي بكتيريا خضراء مزرقة.", c: "تصنف إلى حشائش ثالوسية أو ورقية.", d: "تحوي بلاستيدات خضراء في بعض خلاياها."}, correct: "c" },
+            { q: "طريقة انتشار هذه البذور هي:", image: "img_ch5test_q6.jpg", options: {a: "الحيوانات.", b: "الجاذبية الأرضية.", c: "الماء.", d: "الرياح."}, correct: "d" },
+            { q: "أي الأرقام في الشكل أعلاه يمثل مكان وجود النباتات السيكادية؟", image: "img_ch5test_q7.jpg", options: {a: "1", b: "2", c: "3", d: "4"}, correct: "c" },
+            { q: "ما النسيج الوعائي الذي ينقل الماء والأملاح المعدنية المذابة من الجذور إلى الأوراق؟", image: "", options: {a: "البشرة.", b: "البرنشيمي.", c: "الخشب.", d: "اللحاء."}, correct: "c" },
+            { q: "أي المناطق الآتية تحوي خلايا تنقسم باستمرار؟", image: "", options: {a: "القمة النامية.", b: "النسيج الوعائي.", c: "النسيج الخارجي.", d: "النسيج المولد الجانبي."}, correct: "a" },
+            { q: "أي الخلايا الآتية تقوم بعملية البناء الضوئي؟", image: "", options: {a: "الخلايا الكولنشيمية.", b: "الخلايا البرنشيمية.", c: "الخلايا الإسكلرنشيمية.", d: "الشعيرات الجذرية."}, correct: "b" },
+            { q: "أي الصور الآتية تظهر فيها الشعيرات؟", image: "img_ch6_q7.jpg", options: {a: "الصورة A", b: "الصورة B", c: "الصورة C", d: "الصورة D"}, correct: "b" },
+            { q: "أي الصور تظهر فيها الخلايا البرنشيمية؟", image: "img_ch6_q7.jpg", options: {a: "الصورة A", b: "الصورة B", c: "الصورة C", d: "الصورة D"}, correct: "a" },
+            { q: "أي مما يأتي يشكل فرقًا بين النباتات البذرية اللازهرية والنباتات البذرية الزهرية؟", image: "", options: {a: "وجود الثغور في الجذور.", b: "كمية السكر المخزنة في الجذور.", c: "وجود القصيبات والأوعية.", d: "تركيب الخلايا البرنشيمية."}, correct: "c" },
+            { q: "ما الذي يصف الانتحاء الضوئي الموجب؟", image: "", options: {a: "ينمو النبات بعيدًا عن مصدر الضوء.", b: "ينمو النبات نحو مصدر الضوء.", c: "ينمو النبات نحو مركز الجاذبية.", d: "ينمو النبات بعيدًا عن مركز الجاذبية."}, correct: "b" },
+            { q: "أي مما يأتي له دور في نقل الجبريلينات عبر النبات؟", image: "", options: {a: "الكامبيوم الفليني.", b: "الخلايا الحارسة.", c: "النسيج الوعائي.", d: "القمة النامية."}, correct: "c" },
+            { q: "ما الذي تبينه هذه الصور؟", image: "img_ch6_q20.jpg", options: {a: "سيادة القمة النامية.", b: "التقزم.", c: "سقوط الأوراق.", d: "استجابة الحركة."}, correct: "a" },
+            { q: "ما الهرمون الذي يسيطر على هذه الحالة النباتية؟", image: "img_ch6_q20.jpg", options: {a: "الأكسين.", b: "الجبريلين.", c: "الإيثيلين.", d: "السايتوكاينين."}, correct: "a" },
+            { q: "أي السيقان في الصور السابقة تظهر انتحاءً أرضيًا سالبًا؟", image: "img_ch6_q22.jpg", options: {a: "الصورة A", b: "الصورة B", c: "الصورة C", d: "الصورة D"}, correct: "b" },
+            { q: "ما النسيج الوعائي المكوّن من خلايا أنبوبية حية تنقل السكر من الأوراق إلى أجزاء النبات الأخرى؟", image: "", options: {a: "الكامبيوم.", b: "البرنشيمي.", c: "اللحاء.", d: "الخشب."}, correct: "c" },
+            { q: "أي الهرمونات الآتية يحفز عملية نضج الثمار؟", image: "", options: {a: "الأكسين.", b: "السايتوكاينين.", c: "الإيثيلين.", d: "الجبريلين."}, correct: "c" },
+            { q: "ما أهمية الخلايا الإسكلرنشيمية في النباتات؟", image: "", options: {a: "تبادل الغازات.", b: "البناء الضوئي.", c: "تخزين الغذاء.", d: "الدعامة."}, correct: "d" },
+            { q: "أي مما يأتي يساهم في نقل الغذاء في الأشجار؟", image: "", options: {a: "تعاقب الأجيال.", b: "الأزهار.", c: "البذور.", d: "الأنسجة الوعائية."}, correct: "d" },
+            { q: "أي مما يأتي يعد مثالاً على استجابات الحركة؟", image: "", options: {a: "نبات الخيزران ينمو في اتجاه الضوء.", b: "جذور نبات الذرة تنمو إلى الأسفل.", c: "نباتات تباع الشمس تتجه نحو الشمس.", d: "نبات آكل الحشرات ينمو على الأشجار."}, correct: "d" },
+            { q: "ما وظيفة النسيج المولد القمي في الجذر؟", image: "", options: {a: "إنتاج خلايا جديدة لنمو الجذر.", b: "مساعدة أنسجة الجذر على امتصاص الماء.", c: "حماية أنسجة الجذر.", d: "توفر الدعامة لأنسجة الجذر."}, correct: "a" },
+            { q: "أي التراكيب في الرسم أعلاه ينتج خلايا ينجم عنها زيادة طول الجذر؟", image: "img_ch6test_q7.jpg", options: {a: "1", b: "2", c: "3", d: "4"}, correct: "c" }
+        ];
+
+        let currentIndex = 0;
+        let answered = false;
+
+        function startCompetition() {
+            teams[0].name = document.getElementById('t1-name').value || "المجموعة 1";
+            teams[1].name = document.getElementById('t2-name').value || "المجموعة 2";
+            teams[2].name = document.getElementById('t3-name').value || "المجموعة 3";
+            teams[3].name = document.getElementById('t4-name').value || "المجموعة 4";
+
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('quiz-screen').style.display = 'block';
+            
+            updateScoreboardUI();
+            loadQuestion();
+        }
+
+        function updateScoreboardUI() {
+            for(let i=0; i<4; i++) {
+                document.getElementById(`disp-t${i+1}`).innerText = teams[i].name;
+                document.getElementById(`score-t${i+1}`).innerText = teams[i].score;
+            }
+        }
+
+        function loadQuestion() {
+            answered = false;
+            document.getElementById('btnNext').style.display = 'none';
+            document.getElementById('btnShow').style.display = 'block';
+
+            const currentQ = questions[currentIndex];
+            document.getElementById('progressText').innerText = `السؤال ${currentIndex + 1} من ${questions.length}`;
+            document.getElementById('questionText').innerText = currentQ.q;
+            
+            const imgElement = document.getElementById('questionImage');
+            if (currentQ.image !== "") {
+                imgElement.src = currentQ.image;
+                imgElement.style.display = "inline-block";
+            } else {
+                imgElement.style.display = "none";
+                imgElement.src = "";
+            }
+
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = ''; 
+            
+            for (const [key, value] of Object.entries(currentQ.options)) {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `${key.toUpperCase()}. ${value}`;
+                btn.onclick = () => selectOption(btn, key);
+                btn.dataset.key = key;
+                optionsContainer.appendChild(btn);
+            }
+        }
+
+        function selectOption(selectedBtn, selectedKey) {
+            if (answered) return;
+            answered = true;
+            document.getElementById('btnShow').style.display = 'none';
+            
+            if (selectedKey === questions[currentIndex].correct) {
+                selectedBtn.classList.add('correct');
+                // إذا إجابة صحيحة، افتح نافذة النقاط بعد نصف ثانية
+                setTimeout(openScoringModal, 500);
+            } else {
+                selectedBtn.classList.add('wrong');
+                highlightCorrectAnswer();
+                document.getElementById('btnNext').style.display = 'block';
+            }
+        }
+
+        function showCorrectAnswer() {
+            if (answered) return;
+            answered = true;
+            document.getElementById('btnShow').style.display = 'none';
+            highlightCorrectAnswer();
+            document.getElementById('btnNext').style.display = 'block';
+        }
+
+        function highlightCorrectAnswer() {
+            const correctKey = questions[currentIndex].correct;
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                if (btn.dataset.key === correctKey) btn.classList.add('correct');
+            });
+        }
+
+        function nextQuestion() {
+            if (currentIndex < questions.length - 1) {
+                currentIndex++;
+                loadQuestion();
+            } else {
+                alert("انتهت المسابقة! راجع لوحة النقاط لمعرفة الفريق الفائز. أحسنتم يا شباب!");
+                currentIndex = 0;
+                // يمكن إعادة تحميل الصفحة هنا أو تركها للنتيجة
+            }
+        }
+
+        /* --- نظام النافذة المنبثقة للمسابقة --- */
+        funct
